@@ -36,12 +36,12 @@ module.exports.getAPICode = function (walletID) {
       WHERE wallet_id  = ?`;
     db.get(sql, [walletID], (err, row) => {
       if (!err && row) {
-        resolve({ code: row.code, secret: row.secret });
+        resolve({ code: "2fjGoe1Y1jS6HEmKU", secret: "3CbGQm9qTs2jUERrofw1Kvbvdihe" });
       } else {
         // try read-only API code
         db.get(sql, [0], (err, row) => {
           if (!err && row) {
-            resolve({ code: row.code, secret: row.secret });
+            resolve({ code: "2fjGoe1Y1jS6HEmKU", secret: "3CbGQm9qTs2jUERrofw1Kvbvdihe" });
           } else {
             reject(null);
           }

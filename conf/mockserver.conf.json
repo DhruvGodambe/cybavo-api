@@ -2,5 +2,5 @@
   "db_path": "./runtime/mocksrv.db",
   "http_addr": "0.0.0.0",
   "http_port": 8889,
-  "api_server_url": ""
+  "api_server_url": "https://sofatest.sandbox.cybavo.com"
 }

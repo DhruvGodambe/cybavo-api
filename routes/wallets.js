@@ -12,6 +12,9 @@ const express = require('express');
 const api = require('../helper/apicaller');
 const apicode = require('../models/apicode');
 const crypto = require('crypto');
+const ethers = require('ethers');
+const Web3 = require('web3'); 
+const web3 = new Web3(new Web3.providers.HttpProvider('https://polygon-mumbai.g.alchemy.com/v2/0wp5gGnMjs0zPAHPBKCunqtx99VPEQXB'))
 
 const router = express.Router();
 
@@ -111,9 +114,36 @@ router.post('/:wallet_id/sender/transactions', async function(req, res) {
     res.status(400).json({ error: 'invalid parameters' });
     return;
   }
+  const mintingFactory = "0x39fCca39d3dDf922d5D01217527449BA6e6e80c4";
+  
+  const abiCoder = new ethers.utils.AbiCoder();
+  let data;
+  let contractAddress;
+  if(req.body.function == "mintNFT") {
+    contractAddress = mintingFactory;
+    data = abiCoder.encode(["address"], req.body.args)
+  } else if(req.body.function == "createNFTContract") {
+    contractAddress = mintingFactory;
+    data = abiCoder.encode(["string", "string", "address"], req.body.args)
+  }
+  let contract_abi = `${req.body.function}:${data}`;
+
+  Reqbody = {
+    "requests": [
+      {
+        order_id: req.body.order_id,
+        address: contractAddress,
+        amount: "0",
+        user_id: "ADMIN",
+        contract_abi,
+        ignore_gas_estimate_fail: true
+      }
+    ]
+  }
+
   const apires = await api.makeRequest(req.params.wallet_id, "POST",
     `/v1/sofa/wallets/${req.params.wallet_id}/sender/transactions`,
-    null, JSON.stringify(req.body));
+    null, JSON.stringify(Reqbody));
   if (apires.statusCode) {
     res.status(apires.statusCode).json(apires.result);
   } else {
@@ -675,8 +705,30 @@ router.get('/:wallet_id/contract/read', async function(req, res) {
     res.status(400).json({ error: 'invalid parameters' });
     return;
   }
+  let ReqParameters = getQueryParams(req.query);
+
+  const args = req.body.args;
+
+  const abi = ["function getTotalNFTsMinted(address _nftContract)"]
+  let iface = new ethers.utils.Interface(abi);
+
+  console.log(iface);
+  data = iface.encodeFunctionData("getTotalNFTsMinted", args);
+
+  const nftContract = '0x2c9646c82aa54fadfb31b91cba06f7289404449a';
+  // let params = [];
+  // for(i = 0; i < Object.keys(parameters).length; i++){
+  //   const p = Object.keys(parameters)[i];
+  //   const r = parameters[p];
+  //   params.push(`${p}=${r}`)
+  // }
+  // console.log(params);
+
+  ReqParameters.push(`data=${data}`);
+  console.log(ReqParameters);
+
   const apires = await api.makeRequest(req.params.wallet_id, "GET",
-    `/v1/sofa/wallets/${req.params.wallet_id}/contract/read`, getQueryParams(req.query), null);
+    `/v1/sofa/wallets/${req.params.wallet_id}/contract/read`, ReqParameters, null);
   if (apires.statusCode) {
     res.status(apires.statusCode).json(apires.result);
   } else {
